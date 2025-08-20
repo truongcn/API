@@ -29,11 +29,29 @@ namespace testAPI.API.Controllers
             if (request.Password != request.ConfirmPassword)
                 return BadRequest(new { message = "Passwords do not match" });
 
-            var result = await _authService.RegisterAsync(request.Username, request.Password);
-            if (!result) return BadRequest(new { message = "User already exists" });
+            var result = await _authService.RegisterAsync(request.Username, request.Email, request.Password, request.Role);
+            if (!result) return BadRequest(new { message = "User or email already exists" });
 
-            return Ok(new { message = "Registered successfully" });
+            return Ok(new { message = "Registered successfully. Please check your email to verify." });
         }
+
+
+        [HttpGet("verify")]
+        public async Task<IActionResult> Verify([FromQuery] string email, [FromQuery] string token)
+        {
+            var ok = await _authService.VerifyEmailAsync(email, token);
+            if (!ok) return BadRequest(new { message = "Invalid or expired token" });
+            return Ok(new { message = "Email verified successfully" });
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification([FromBody] string email)
+        {
+            var ok = await _authService.ResendVerificationAsync(email);
+            if (!ok) return BadRequest(new { message = "User not found or already verified" });
+            return Ok(new { message = "Verification email sent" });
+        }
+
     }
 
     public class LoginRequest

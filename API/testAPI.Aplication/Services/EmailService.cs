@@ -1,38 +1,44 @@
 ﻿using System.Net;
 using System.Net.Mail;
-using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
-public class EmailService
+public class EmailSettings
 {
-    private readonly IConfiguration _config;
+    public string SmtpServer { get; set; } = "";
+    public int Port { get; set; }
+    public string SenderName { get; set; } = "";
+    public string SenderEmail { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+}
 
-    public EmailService(IConfiguration config)
+public interface IEmailService
+{
+    Task SendEmailAsync(string to, string subject, string htmlBody);
+}
+
+public class EmailService : IEmailService
+{
+    private readonly EmailSettings _settings;
+    public EmailService(IOptions<EmailSettings> options) => _settings = options.Value;
+
+    public async Task SendEmailAsync(string to, string subject, string htmlBody)
     {
-        _config = config;
-    }
-
-    public async Task SendEmailAsync(string to, string subject, string body)
-    {
-        var emailSettings = _config.GetSection("EmailSettings");
-
-        var smtpClient = new SmtpClient(emailSettings["SmtpServer"])
+        using var client = new SmtpClient(_settings.SmtpServer, _settings.Port)
         {
-            Port = int.Parse(emailSettings["Port"]),
-            Credentials = new NetworkCredential(emailSettings["Username"], emailSettings["Password"]),
-            EnableSsl = true
+            EnableSsl = true,
+            Credentials = new NetworkCredential(_settings.Username, _settings.Password)
         };
 
-        var mailMessage = new MailMessage
+        var mail = new MailMessage
         {
-            From = new MailAddress(emailSettings["From"]),
+            From = new MailAddress(_settings.SenderEmail, _settings.SenderName),
             Subject = subject,
-            Body = body,
+            Body = htmlBody,
             IsBodyHtml = true
         };
+        mail.To.Add(to);
 
-        mailMessage.To.Add(to);
-
-        await smtpClient.SendMailAsync(mailMessage);
+        await client.SendMailAsync(mail);
     }
 }
