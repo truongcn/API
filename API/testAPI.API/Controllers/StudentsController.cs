@@ -16,7 +16,7 @@ namespace testAPI.API.Controllers
             _studentService = studentService;
         }
 
-        [Authorize] // or [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public IActionResult GetAll() => Ok(_studentService.GetAll());
 

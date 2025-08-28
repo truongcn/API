@@ -29,6 +29,9 @@ namespace testAPI.API.Controllers
             if (request.Password != request.ConfirmPassword)
                 return BadRequest(new { message = "Passwords do not match" });
 
+            // Force default role
+            string role = "User";
+
             var result = await _authService.RegisterAsync(request.Username, request.Email, request.Password, request.Role);
             if (!result) return BadRequest(new { message = "User or email already exists" });
 

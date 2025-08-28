@@ -7,6 +7,7 @@ using testAPI.Application.Services;
 using testAPI.Infrastructure.Interfaces;
 using testAPI.Infrastructure.Repositories;
 using testAPI.testAPI.Infrastructure.Data;
+using testAPI.testAPI.Infrastructure.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +18,23 @@ builder.Services.AddDbContext<TestDbContext>(options =>
 // DI
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+//CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // your frontend origin(s)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 
 // JWT
@@ -47,6 +62,8 @@ var app = builder.Build();
 
 app.UseStaticFiles();
 
+
+app.UseCors("AllowFrontend"); // Dùng đúng tên policy bạn đã đặt ở trên
 app.UseAuthentication();
 app.UseAuthorization();
 
